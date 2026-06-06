@@ -13,7 +13,7 @@ dashmap = "6"
 futures = "0.3.32"
 log = "0.4.29"
 pin-project-lite = "0.2.17"
-wreq = { version = "5.3.0", default-features = false, features = ["json", "stream", "multipart", "socks"] }
+wreq = { version = "5.3.0", default-features = false, features = ["json", "stream", "multipart", "socks", "webpki-roots"] }
 wreq-util = "2.2.6"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"

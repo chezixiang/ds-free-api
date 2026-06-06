@@ -141,13 +141,18 @@ where
                         finish_reason,
                         accumulated_token_usage,
                     } => {
-                        trace!(target: "adapter", ">>> conv: finish={:?}", finish_reason);
+                        trace!(target: "adapter", ">>> conv: finish={:?}, usage={:?}", finish_reason, accumulated_token_usage);
                         *this.finished = true;
-                        let mut chunk = make_chunk(this.model, Delta::default(), Some("stop"));
-                        if *this.include_usage
-                            && let Some(u) = accumulated_token_usage
-                        {
+                        let finish: Option<&'static str> = finish_reason
+                            .as_deref()
+                            .and_then(|_| Some("stop"));
+                        let mut chunk = make_chunk(this.model, Delta::default(), finish);
+                        // 始终在 accumulated_token_usage 可用时包含 usage
+                        if let Some(u) = accumulated_token_usage {
                             chunk.usage = Some(make_usage(*this.prompt_tokens, u));
+                        } else if *this.include_usage {
+                            // 即使没有 output tokens，也提供 prompt_tokens
+                            chunk.usage = Some(make_usage(*this.prompt_tokens, 0));
                         }
                         return Poll::Ready(Some(Ok(chunk)));
                     }
