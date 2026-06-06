@@ -179,7 +179,7 @@ export function ConfigPage() {
           {config.ds_core.accounts.map((a, i) => (
             <div key={i} className="flex flex-wrap items-end gap-2 p-3 border rounded-md">
               <div className="flex-1 min-w-[120px]">
-                <label className="text-xs text-muted-foreground">{t('config.ds_core.accounts.email')}</label>
+                <label className="text-xs text-muted-foreground">{t('config.accounts.email')}</label>
                 <Input
                   value={a.email}
                   onChange={(e) => {
@@ -190,7 +190,7 @@ export function ConfigPage() {
                 />
               </div>
               <div className="w-24">
-                <label className="text-xs text-muted-foreground">{t('config.ds_core.accounts.mobile')}</label>
+                <label className="text-xs text-muted-foreground">{t('config.accounts.mobile')}</label>
                 <Input
                   value={a.mobile}
                   onChange={(e) => {
@@ -201,7 +201,7 @@ export function ConfigPage() {
                 />
               </div>
               <div className="w-20">
-                <label className="text-xs text-muted-foreground">{t('config.ds_core.accounts.areaCode')}</label>
+                <label className="text-xs text-muted-foreground">{t('config.accounts.areaCode')}</label>
                 <Input
                   value={a.area_code}
                   onChange={(e) => {
@@ -212,7 +212,7 @@ export function ConfigPage() {
                 />
               </div>
               <div className="flex-1 min-w-[120px]">
-                <label className="text-xs text-muted-foreground">{t('config.ds_core.accounts.password')}</label>
+                <label className="text-xs text-muted-foreground">{t('config.accounts.password')}</label>
                 <div className="flex items-center gap-1">
                   <Input
                     type={revealedPasswords[i] ? 'text' : 'password'}
@@ -255,7 +255,7 @@ export function ConfigPage() {
               ])
             }
           >
-            <Plus className="h-4 w-4 mr-1" /> {t('config.ds_core.accounts.add')}
+            <Plus className="h-4 w-4 mr-1" /> {t('config.accounts.add')}
           </Button>
         </CardContent>
       </Card>

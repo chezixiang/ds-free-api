@@ -63,12 +63,18 @@ impl DualLogger {
             .open(log_path)
             .expect("无法打开日志文件");
 
+        // 终端是否支持 ANSI 颜色
+        // NO_COLOR / CLICOLOR=0 / TERM=dumb 强制禁用
+        let no_color = std::env::var("NO_COLOR").is_ok()
+            || std::env::var("CLICOLOR").map(|v| v == "0").unwrap_or(false)
+            || std::env::var("TERM").map(|v| v == "dumb").unwrap_or(false);
+
         Self {
             buffer: Mutex::new(VecDeque::with_capacity(BUFFER_CAPACITY)),
             file: std::sync::Mutex::new(file),
             log_path: log_path.to_string(),
             max_level,
-            use_color: std::io::stderr().is_terminal(),
+            use_color: !no_color && std::io::stderr().is_terminal(),
         }
     }
 
