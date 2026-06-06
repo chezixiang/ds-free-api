@@ -385,6 +385,7 @@ pub(crate) struct StreamCfg {
     pub include_obfuscation: bool,
     pub stop: Vec<String>,
     pub prompt_tokens: u32,
+    pub bpe: Option<Arc<tiktoken_rs::CoreBPE>>,
     pub repair_fn: Option<RepairFn>,
     pub tag_config: Arc<TagConfig>,
 }
@@ -405,6 +406,7 @@ where
         cfg.include_usage,
         cfg.include_obfuscation,
         cfg.prompt_tokens,
+        cfg.bpe,
     );
     let tool_parsed = tool_parser::ToolCallStream::new(converted, model.clone(), cfg.tag_config);
     let tool_boxed: Pin<
@@ -655,6 +657,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )
         .await
@@ -681,6 +684,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )
         .await
@@ -706,6 +710,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )
         .await
@@ -762,6 +767,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -792,6 +798,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -807,7 +814,7 @@ mod tests {
             .find(|c| c["usage"]["completion_tokens"].as_i64() == Some(12));
         assert!(usage_chunk.is_some(), "should have usage chunk");
         let finish_chunk = chunks.iter().rev().find(|c| {
-            c["choices"].as_array().map_or(false, |a| !a.is_empty())
+            c["choices"].as_array().is_some_and(|a| !a.is_empty())
                 && c["choices"][0]["finish_reason"].as_str().is_some()
         });
         assert_eq!(finish_chunk.unwrap()["choices"][0]["finish_reason"], "stop");
@@ -828,6 +835,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -866,6 +874,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -919,6 +928,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -964,6 +974,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -1006,6 +1017,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -1039,6 +1051,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -1053,7 +1066,7 @@ mod tests {
                 );
                 let len = serde_json::to_string(c).unwrap().len();
                 assert!(
-                    len >= 490 && len <= 530,
+                    (490..=530).contains(&len),
                     "chunk len {} out of expected 490..=530 range",
                     len
                 );
@@ -1091,6 +1104,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )
         .await
@@ -1125,6 +1139,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -1158,6 +1173,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;
@@ -1184,6 +1200,7 @@ mod tests {
                 prompt_tokens: 0,
                 repair_fn: None,
                 tag_config: default_tag_config(),
+                bpe: None,
             },
         )))
         .await;

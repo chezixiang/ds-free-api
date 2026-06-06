@@ -832,7 +832,7 @@ dependencies = [
 
 [[package]]
 name = "ds-free-api"
-version = "0.2.7-pre1"
+version = "0.2.7-pre1-alpha2"
 dependencies = [
  "anyhow",
  "axum",

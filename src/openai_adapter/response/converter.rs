@@ -1,6 +1,7 @@
 //! OpenAI Chunk 生成器 —— 将 StreamEvent 映射为 ChatCompletionsResponseChunk
 
 use std::pin::Pin;
+use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use futures::Stream;
@@ -56,8 +57,13 @@ pin_project! {
         include_usage: bool,
         include_obfuscation: bool,
         prompt_tokens: u32,
+        bpe: Option<Arc<tiktoken_rs::CoreBPE>>,
         finished: bool,
         role_sent: bool,
+        // 累计思考内容（用于自行计算 completion tokens）
+        accumulated_reasoning: String,
+        // 累计回复内容（用于自行计算 completion tokens）
+        accumulated_content: String,
     }
 }
 
@@ -68,6 +74,7 @@ impl<S> ConverterStream<S> {
         include_usage: bool,
         include_obfuscation: bool,
         prompt_tokens: u32,
+        bpe: Option<Arc<tiktoken_rs::CoreBPE>>,
     ) -> Self {
         Self {
             inner,
@@ -75,8 +82,11 @@ impl<S> ConverterStream<S> {
             include_usage,
             include_obfuscation,
             prompt_tokens,
+            bpe,
             finished: false,
             role_sent: false,
+            accumulated_reasoning: String::new(),
+            accumulated_content: String::new(),
         }
     }
 }
@@ -114,6 +124,7 @@ where
                     }
                     StreamEvent::ThinkDelta { content } => {
                         trace!(target: "adapter", ">>> conv: thinking len={}", content.len());
+                        this.accumulated_reasoning.push_str(&content);
                         return Poll::Ready(Some(Ok(make_chunk(
                             this.model,
                             Delta {
@@ -128,6 +139,7 @@ where
                     }
                     StreamEvent::ContentDelta { content } => {
                         trace!(target: "adapter", ">>> conv: content delta len={}", content.len());
+                        this.accumulated_content.push_str(&content);
                         return Poll::Ready(Some(Ok(make_chunk(
                             this.model,
                             Delta {
@@ -145,15 +157,23 @@ where
                         *this.finished = true;
                         let finish: Option<&'static str> = finish_reason
                             .as_deref()
-                            .and_then(|_| Some("stop"));
+                            .map(|_| "stop");
                         let mut chunk = make_chunk(this.model, Delta::default(), finish);
-                        // 始终在 accumulated_token_usage 可用时包含 usage
-                        if let Some(u) = accumulated_token_usage {
-                            chunk.usage = Some(make_usage(*this.prompt_tokens, u));
-                        } else if *this.include_usage {
-                            // 即使没有 output tokens，也提供 prompt_tokens
-                            chunk.usage = Some(make_usage(*this.prompt_tokens, 0));
-                        }
+                        let completion_tokens = accumulated_token_usage.unwrap_or_else(|| {
+                            // DeepSeek 未返回 usage 时自行计算
+                            if let Some(bpe) = &this.bpe {
+                                let full = format!("{}{}", this.accumulated_reasoning, this.accumulated_content);
+                                if full.is_empty() {
+                                    0
+                                } else {
+                                    u32::try_from(bpe.encode_with_special_tokens(&full).len())
+                                        .unwrap_or(0)
+                                }
+                            } else {
+                                0
+                            }
+                        });
+                        chunk.usage = Some(make_usage(*this.prompt_tokens, completion_tokens));
                         return Poll::Ready(Some(Ok(chunk)));
                     }
                 },
